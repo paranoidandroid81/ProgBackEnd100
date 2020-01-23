@@ -1,8 +1,7 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace LibraryApi.Models
 {
@@ -16,7 +15,9 @@ namespace LibraryApi.Models
         public string Author { get; set; }
         [Required]
         public string Genre { get; set; }
+
         [Range(1, int.MaxValue)]
+        [BindRequired]
         public int NumberOfPages { get; set; }
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

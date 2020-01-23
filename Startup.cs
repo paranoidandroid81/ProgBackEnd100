@@ -13,6 +13,9 @@ using Microsoft.Extensions.Logging;
 using LibraryApi.Services;
 using LibraryApi.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
+using System.Reflection;
+using System.IO;
 
 namespace LibraryApi
 {
@@ -28,12 +31,35 @@ namespace LibraryApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllers();
+            services.AddControllers()
+                .AddJsonOptions(options => 
+                    options.JsonSerializerOptions.Converters.Add(new StringToIntConverter())
+                );
             services.AddTransient<IGenerateEnrollmentIds, EnrollmentIdGenerator>();
 
             services.AddDbContext<LibraryDataContext>(options =>
-                options.UseSqlServer("server=.\\sqlexpress;database=library;integrated security=true")
+                options.UseSqlServer(Configuration.GetConnectionString("LibraryDatabase"))
             );
+
+            services.AddSwaggerGen(s =>
+            {
+                s.SwaggerDoc("docs", new OpenApiInfo
+                {
+                    Title = "Library API",
+                    Version =  "1.0",
+                    Contact = new OpenApiContact
+                    {
+                        Name = "Mikey Korst",
+                        Email = "mpk44@pitt.edu"
+                    },
+                    Description = "This is the API for the library from BES 100. Cool stuff!"
+                });
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                s.IncludeXmlComments(xmlPath);
+            });
+
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -44,7 +70,17 @@ namespace LibraryApi
                 app.UseDeveloperExceptionPage();
             }
 
-            app.UseHttpsRedirection();
+            app.UseSwagger();
+
+            //app.UseCors(x => x.AllowAnyOrigin());
+
+            app.UseSwaggerUI(x =>
+            {
+                x.SwaggerEndpoint("/swagger/docs/swagger.json", "Library API");
+                x.RoutePrefix = string.Empty;
+            });
+
+            //app.UseHttpsRedirection();
 
             app.UseRouting();
 
